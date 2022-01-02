@@ -45,7 +45,7 @@ class Game(metaclass=Singleton):
         init_cells: list of (x, y) tuples, where x, y 
         is coordinates of cell objects.
     """
-    def __init__(self, init_cells):
+    def init(self, init_cells):
         self._cells = {}
         for x, y in init_cells:
             self._cells[(x, y)] = Cell(x, y, self)

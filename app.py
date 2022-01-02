@@ -1,8 +1,7 @@
-from tkinter.constants import TRUE
 from game_of_life import Game
-import time
 import tkinter as tk
 
+# TODO Moving camera
 class LifeGameCanvas(tk.Canvas):
     def __init__(self, cell_size, *args, **kwargs):
         super().__init__(bg="white", *args, **kwargs)
@@ -48,19 +47,30 @@ class LifeGameCanvas(tk.Canvas):
 
 
 class Cycle:
-    def __init__(self, canvas, delay):
+    def __init__(self, canvas, delay=100):
         self.canvas = canvas
         self.delay = delay
-        self.game = None
+        self.game = Game()
+        self.stop = False
 
-    def __call__(self):
-        self.game = Game(self.canvas.get_cells())
+    def start(self):
+        self.stop = False
+        self.game.init(self.canvas.get_cells())
         self.update()
 
     def update(self):
-        self.game.update()
-        self.canvas.render_cells(self.game.get_cells())
-        self.canvas.after(self.delay, self.update)
+        if not self.stop:
+            self.game.update()
+            self.canvas.render_cells(self.game.get_cells())
+            self.canvas.after(self.delay, self.update)
+
+    # TODO Test quit
+    def quit(self):
+        self.canvas.edit = True
+        self.canvas.delete("all")
+        self.canvas.cells = []
+        self.stop = True
+        
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -69,7 +79,13 @@ if __name__ == "__main__":
     canvas = LifeGameCanvas(master=root, width=500, height=500, cell_size=(10, 10))
     canvas.pack()
 
-    btn = tk.Button(master=root, text="Start Game!", command=Cycle(canvas, 1000))
-    btn.pack(side="bottom")
+    cycle = Cycle(canvas)
+    start_button = tk.Button(master=root, text="Start Cycle", command=cycle.start)
+    start_button.pack(side="left")
+    refresh_button = tk.Button(master=root, text="Stop Cycle", command=cycle.quit)
+    refresh_button.pack(side="left")
+    # TODO Delay editing
+    delay_entry = tk.Entry()
+    delay_entry.pack(side="left")
     
     root.mainloop()
