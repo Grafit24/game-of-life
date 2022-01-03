@@ -1,14 +1,20 @@
 from game_of_life import Game
 import tkinter as tk
 
-# TODO Moving camera
 class LifeGameCanvas(tk.Canvas):
-    def __init__(self, cell_size, *args, **kwargs):
-        super().__init__(bg="white", *args, **kwargs)
+    def __init__(self, cell_size, height, width, *args, **kwargs):
+        super().__init__(bg="white", height=height, width=width, *args, **kwargs)
         self.cell_size = cell_size
         self.bind("<Button-1>", self.event_edit_maker(self.create_cell))
         self.bind("<Button-3>", self.event_edit_maker(self.remove_cell))
+        self.bind("<B2-Motion>", self.move_camera)
+        self.configure(xscrollincrement=1, yscrollincrement=1)
+        self.width = width
+        self.height = height
+        self.center = (int(width/2), int(height/2))
         self.cells = []
+        self.camera_coef = 3
+        self.camera_pos = (0, 0)
         self.edit = True
 
     def get_cells(self):
@@ -21,10 +27,21 @@ class LifeGameCanvas(tk.Canvas):
         for x, y in cells:
             self.create_cell(x, y)
 
+    def move_camera(self, event):
+        vector = (-(self.center[0]-event.x), -(self.center[1]-event.y))
+        x_dir, y_dir = vector
+        x_dir = self.camera_coef*x_dir//self.center[0]
+        y_dir = self.camera_coef*y_dir//self.center[1]
+        self.camera_pos = self.camera_pos[0]+x_dir, self.camera_pos[1]+y_dir
+        print(self.camera_pos)
+        self.xview_scroll(x_dir, "units")
+        self.yview_scroll(y_dir, "units")
+
     def event_edit_maker(self, func):
         def event_func(event):
             if self.edit:
                 x, y = event.x, event.y
+                x, y = self.camera_pos[0]+x, self.camera_pos[1]+y
                 x //= self.cell_size[0]
                 y //= self.cell_size[1]
                 func(x, y)
