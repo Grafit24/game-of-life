@@ -4,18 +4,23 @@ import tkinter as tk
 class LifeGameCanvas(tk.Canvas):
     def __init__(self, cell_size, height, width, *args, **kwargs):
         super().__init__(bg="white", height=height, width=width, *args, **kwargs)
-        self.cell_size = cell_size
-        self.bind("<Button-1>", self.event_edit_maker(self.create_cell))
-        self.bind("<Button-3>", self.event_edit_maker(self.remove_cell))
-        self.bind("<B2-Motion>", self.move_camera)
-        self.configure(xscrollincrement=1, yscrollincrement=1)
+        # Additional
         self.width = width
         self.height = height
-        self.center = (int(width/2), int(height/2))
+        self.xcenter, self.ycenter = int(width/2), int(height/2)
+        # Rendering
+        self.cell_size = cell_size
         self.cells = []
+        # Camera
+        # set unit measurement 
+        self.configure(xscrollincrement=1, yscrollincrement=1)
+        self.bind("<B2-Motion>", self.move_camera)
         self.camera_coef = 3
-        self.camera_pos = (0, 0)
+        self.xcamera, self.ycamera = 0, 0
+        # Edit
         self.edit = True
+        self.bind("<Button-1>", self.event_edit_maker(self.create_cell))
+        self.bind("<Button-3>", self.event_edit_maker(self.remove_cell))
 
     def get_cells(self):
         return tuple(self.cells)
@@ -28,12 +33,12 @@ class LifeGameCanvas(tk.Canvas):
             self.create_cell(x, y)
 
     def move_camera(self, event):
-        vector = (-(self.center[0]-event.x), -(self.center[1]-event.y))
+        vector = (-(self.xcenter-event.x), -(self.ycenter-event.y))
         x_dir, y_dir = vector
-        x_dir = self.camera_coef*x_dir//self.center[0]
-        y_dir = self.camera_coef*y_dir//self.center[1]
-        self.camera_pos = self.camera_pos[0]+x_dir, self.camera_pos[1]+y_dir
-        print(self.camera_pos)
+        x_dir = self.camera_coef*x_dir//self.xcenter
+        y_dir = self.camera_coef*y_dir//self.ycenter
+        self.xcamera = self.xcamera + x_dir
+        self.ycamera = self.ycamera + y_dir
         self.xview_scroll(x_dir, "units")
         self.yview_scroll(y_dir, "units")
 
@@ -41,7 +46,7 @@ class LifeGameCanvas(tk.Canvas):
         def event_func(event):
             if self.edit:
                 x, y = event.x, event.y
-                x, y = self.camera_pos[0]+x, self.camera_pos[1]+y
+                x, y = self.xcamera+x, self.ycamera+y
                 x //= self.cell_size[0]
                 y //= self.cell_size[1]
                 func(x, y)
@@ -64,6 +69,7 @@ class LifeGameCanvas(tk.Canvas):
 
 
 class Cycle:
+    # TODO Set config `default-delay`
     def __init__(self, canvas, delay=100):
         self.canvas = canvas
         self.delay = delay
@@ -81,13 +87,21 @@ class Cycle:
             self.canvas.render_cells(self.game.get_cells())
             self.canvas.after(self.delay, self.update)
 
-    # TODO Test quit
     def quit(self):
         self.canvas.edit = True
         self.canvas.delete("all")
         self.canvas.cells = []
         self.stop = True
-        
+        self.game.clear()
+
+    def set_delay(self, delay):
+        self.delay = delay
+
+def set_delay_event(cycle, entry):
+    def set_cycle():
+        cycle.set_delay(entry.get())
+    return set_cycle
+    
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -97,12 +111,16 @@ if __name__ == "__main__":
     canvas.pack()
 
     cycle = Cycle(canvas)
-    start_button = tk.Button(master=root, text="Start Cycle", command=cycle.start)
+    start_button = tk.Button(master=root, text="Start Cycle")
+    start_button.configure(command=cycle.start)
     start_button.pack(side="left")
     refresh_button = tk.Button(master=root, text="Stop Cycle", command=cycle.quit)
     refresh_button.pack(side="left")
-    # TODO Delay editing
-    delay_entry = tk.Entry()
-    delay_entry.pack(side="left")
+    delay_entry = tk.Entry(master=root, width=5)
+    # TODO default_delay
+    delay_entry.insert(tk.END, "100")
+    delay_entry.pack(side="right")
+    delay_button = tk.Button(master=root, text="Set delay", command=set_delay_event(cycle, delay_entry))
+    delay_button.pack(side="right")
     
     root.mainloop()

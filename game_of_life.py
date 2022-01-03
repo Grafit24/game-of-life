@@ -88,4 +88,7 @@ class Game(metaclass=Singleton):
         return neighbours
 
     def get_cells(self):
-        return tuple(self._cells.keys()) 
+        return tuple(self._cells.keys())
+
+    def clear(self):
+        self._cells = {}
