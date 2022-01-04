@@ -1,17 +1,20 @@
+"""
+Module realize Conway's Game of Life.
+If you aren't familiar with this game:
+https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
+"""
 from itertools import product
+from typing import List, Tuple
+from templates import Singleton
 
 
-class Singleton(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+__author__ = "Sergey Zelenovsky"
+__email__ = "zelnovskiygoodman454@gmail.com"
 
 
 class Cell:
-    def __init__(self, x, y, game_obj):
+    """Base unit of the Life Game."""
+    def __init__(self, x: int, y: int, game_obj: "Game")-> None:
         self._x = x
         self._y = y
         self._game = game_obj
@@ -19,7 +22,7 @@ class Cell:
             raise ValueError("x, y arguments must be integer's objects.")
         self._neighbours = []
 
-    def update_neighbours(self):
+    def update_neighbours(self)-> None:
         self._neighbours = self._game.look_around(self.x, self.y)
 
     @property
@@ -36,12 +39,14 @@ class Cell:
 
     @property
     def count(self):
+        """Number of neighbours."""
         return len(self.neighbours)
         
 
 class Game(metaclass=Singleton):
-    """Class of all game logic.
-    Args
+    """All Life Game logic.
+
+    Args:
         init_cells: list of (x, y) tuples, where x, y 
         is coordinates of cell objects.
     """
@@ -54,6 +59,7 @@ class Game(metaclass=Singleton):
             cell.update_neighbours()
 
     def update(self):
+        """Go to the next step."""
         creating_objects = []
         removing_objects = []
         # preprocess
@@ -78,7 +84,10 @@ class Game(metaclass=Singleton):
         for cell in self._cells.values():
             cell.update_neighbours()
 
-    def look_around(self, x, y):
+    def look_around(self, x, y)-> List[Cell]:
+        """Detect all neighbours around cell (dead or alive no matter).
+        Note. Maximum neighbours is eight.
+        """
         neighbours = []
         for с in product([-1, 0, 1], repeat=2):
             dx, dy = с[0]+x, с[1]+y
@@ -87,8 +96,10 @@ class Game(metaclass=Singleton):
                 neighbours.append(neighbour)
         return neighbours
 
-    def get_cells(self):
+    def get_cells(self)-> Tuple[Tuple[int]]:
+        """Return tuple of cell coordinates (x, y)."""
         return tuple(self._cells.keys())
 
-    def clear(self):
+    def clear(self)-> None:
+        """Remove all cells."""
         self._cells = {}
