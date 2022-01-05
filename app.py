@@ -2,7 +2,7 @@
 from game_of_life import Game
 from templates import Singleton
 import tkinter as tk
-from typing import Callable, Tuple
+from typing import Callable, Sequence, Tuple, Union, Dict
 
 
 __author__ = "Sergey Zelenovsky"
@@ -50,7 +50,7 @@ class LifeGameCanvas(tk.Canvas, metaclass=Singleton):
         self.bind("<Button-1>", self.event_edit_maker(self.create_cell))
         self.bind("<Button-3>", self.event_edit_maker(self.remove_cell))
 
-    def get_cells(self)->Tuple[int]:
+    def get_cells(self)-> Tuple[int, int]:
         """Return tuple of x, y coordinates for cells on the canvas."""
         return tuple(self.cells)
 
@@ -105,7 +105,7 @@ class LifeGameCanvas(tk.Canvas, metaclass=Singleton):
         if (x, y) in self.cells:
             self.cells.remove((x, y))
 
-    def convert_coordinates(self, x, y):
+    def convert_coordinates(self, x: int, y: int)-> Tuple[Tuple[int, int]]:
         """Convert cell coordinates to pixel coordinates.
 
         Note. One cell is square, that represented by two points, 
@@ -171,6 +171,34 @@ def set_delay_event(cycle: Cycle, entry: tk.Entry)-> Callable:
         except ValueError as e:
             print("The expected delay value was be Integer type.")
     return set_delay
+
+
+class DoubleStateButton(tk.Button):
+    """Button with two state: default and pressed"""
+    def __init__(self, commands: Sequence[Callable], 
+                 state_configs: Union[None, Dict[Callable, Dict]]=None,
+                 *args, **kwargs)-> None:
+        self.mod_command = self.get_modified_command(commands)
+        super().__init__(command=self.mod_command, *args, **kwargs)
+        self.parity = True
+        self.state_configs = state_configs
+        # -1 because last command return button in default state.
+        self.set_config(commands[-1])
+
+    def set_config(self, f):
+        if self.state_configs is not None:
+            self.configure(**self.state_configs[f])
+
+    def get_modified_command(self, commands: Sequence[Callable])-> Callable:
+        f1, f2 = commands
+        def mod_command():
+            main_f = f1 if self.parity else f2
+            self.set_config(main_f)
+            self.parity = not self.parity
+            main_f()
+        return mod_command
+
+
     
 
 if __name__ == "__main__":
@@ -181,20 +209,28 @@ if __name__ == "__main__":
     canvas.pack()
 
     cycle = Cycle(canvas)
-    # TODO Unify start and stop button
-    # Start button
-    start_button = tk.Button(master=root, text="Start Cycle")
-    start_button.configure(command=cycle.start)
-    start_button.pack(side="left")
-    # Refresh button
-    refresh_button = tk.Button(master=root, text="Stop Cycle", command=cycle.quit)
-    refresh_button.pack(side="left")
-    delay_entry = tk.Entry(master=root, width=5)
+    state_btn = DoubleStateButton(
+        [cycle.start, cycle.quit],
+        {
+            cycle.start:{
+                "text":"Stop Cycle"
+                
+            }, 
+            cycle.quit:{
+                "text":"Start Cycle"
+            }
+        },
+        master=root
+        )
+    state_btn.pack(side="left")
+
     # Delay setup
     # TODO default_delay
+    delay_entry = tk.Entry(master=root, width=5)
     delay_entry.insert(tk.END, "100")
     delay_entry.pack(side="right")
-    delay_button = tk.Button(master=root, text="Set Delay", command=set_delay_event(cycle, delay_entry))
-    delay_button.pack(side="right")
+    delay_btn = tk.Button(master=root, text="Set Delay",
+                          command=set_delay_event(cycle, delay_entry))
+    delay_btn.pack(side="right")
     
     root.mainloop()
