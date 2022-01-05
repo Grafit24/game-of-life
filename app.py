@@ -3,6 +3,7 @@
 __author__ = "Sergey Zelenovsky"
 __email__ = "zelnovskiygoodman454@gmail.com"
 
+import os
 from game_of_life import Game
 from templates import Singleton
 import tkinter as tk
@@ -216,6 +217,8 @@ class DoubleStateButton(tk.Button):
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Game of Life")
+    if os.path.exists("images/logo.ico"):
+        root.wm_iconbitmap("images/logo.ico")
     
     canvas = LifeGameCanvas(master=root, width=500, height=500, cell_size=10, camera_coef=3)
     canvas.pack()
