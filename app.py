@@ -135,7 +135,7 @@ class Cycle(metaclass=Singleton):
     # TODO Set config `default-delay`
     def __init__(self, canvas: LifeGameCanvas, delay: int=100)-> None:
         self.canvas = canvas
-        self.delay = delay
+        self._delay = delay
         self.game = Game()
         self.stop = False
 
@@ -148,7 +148,7 @@ class Cycle(metaclass=Singleton):
         if not self.stop:
             self.game.update()
             self.canvas.render_cells(self.game.get_cells())
-            self.canvas.after(self.delay, self.update)
+            self.canvas.after(self._delay, self.update)
 
     def quit(self)-> None:
         self.canvas.edit = True
@@ -157,16 +157,19 @@ class Cycle(metaclass=Singleton):
         self.stop = True
         self.game.clear()
 
-    # TODO to property or lock self.delay
     def set_delay(self, delay: int)-> None:
-        self.delay = delay
+        self._delay = delay
 
 def set_delay_event(cycle: Cycle, entry: tk.Entry)-> Callable:
     """Return Callable func for the button command, which 
     sets delay in the Cycle use value in the `entry`.
     """
     def set_delay():
-        cycle.set_delay(entry.get())
+        try:
+            entry_value = entry.get()
+            cycle.set_delay(int(entry_value))
+        except ValueError as e:
+            print("The expected delay value was be Integer type.")
     return set_delay
     
 
@@ -178,6 +181,7 @@ if __name__ == "__main__":
     canvas.pack()
 
     cycle = Cycle(canvas)
+    # TODO Unify start and stop button
     # Start button
     start_button = tk.Button(master=root, text="Start Cycle")
     start_button.configure(command=cycle.start)
