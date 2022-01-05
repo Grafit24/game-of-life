@@ -41,8 +41,6 @@ class LifeGameCanvas(tk.Canvas, metaclass=Singleton):
         # Camera
         # set unit measurement 
         self.configure(xscrollincrement=1, yscrollincrement=1)
-        # TODO Camera move while user it pressed 
-        # (use <...Realise> <...Pressed> and var).
         self.bind("<B2-Motion>", self.move_camera)
         self.camera_coef = camera_coef
         self.xcamera, self.ycamera = 0, 0
@@ -167,10 +165,13 @@ def set_delay_event(cycle: Cycle, entry: tk.Entry)-> Callable:
     """
     def set_delay():
         try:
-            entry_value = entry.get()
-            cycle.set_delay(int(entry_value))
+            entry_value = int(entry.get())
         except ValueError as e:
             print("The expected delay value was be Integer type.")
+        if entry_value > 0:
+            cycle.set_delay(entry_value)
+        else:
+            print("Delay must be bigger than 0!")
     return set_delay
 
 
