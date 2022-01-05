@@ -1,15 +1,15 @@
-"""
-Module realize Conway's Game of Life.
+"""Module realize Conway's Game of Life.
+
 If you aren't familiar with this game:
 https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
 """
-from itertools import product
-from typing import List, Tuple
-from templates import Singleton
-
 
 __author__ = "Sergey Zelenovsky"
 __email__ = "zelnovskiygoodman454@gmail.com"
+
+from itertools import product
+from typing import List, Tuple
+from templates import Singleton
 
 
 class Cell:

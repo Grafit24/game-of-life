@@ -1,12 +1,12 @@
 """Entry point to application. Realize GUI and rendering logic."""
-from game_of_life import Game
-from templates import Singleton
-import tkinter as tk
-from typing import Callable, Sequence, Tuple, Union, Dict
-
 
 __author__ = "Sergey Zelenovsky"
 __email__ = "zelnovskiygoodman454@gmail.com"
+
+from game_of_life import Game
+from templates import Singleton
+import tkinter as tk
+from typing import Callable, Tuple, Dict
 
 
 class LifeGameCanvas(tk.Canvas, metaclass=Singleton):
@@ -174,32 +174,44 @@ def set_delay_event(cycle: Cycle, entry: tk.Entry)-> Callable:
 
 
 class DoubleStateButton(tk.Button):
-    """Button with two state: default and pressed"""
-    def __init__(self, commands: Sequence[Callable], 
-                 state_configs: Union[None, Dict[Callable, Dict]]=None,
-                 *args, **kwargs)-> None:
-        self.mod_command = self.get_modified_command(commands)
-        super().__init__(command=self.mod_command, *args, **kwargs)
+    """Button with two state: default and pressed.
+
+    Actually, Button contain two buttons. `command` param for this buttons is required. 
+    Default button swaps with Pressed button and vice versa.
+    
+    Attributes:
+        default_state: is a dictionary of Button parameters with required `command`.
+        pressed_state: likewise a default_state. Set the state after click.
+    """
+    def __init__(self, default_state: Dict, pressed_state: Dict)-> None:
+        default_f = default_state.pop("command")
+        pressed_f = pressed_state.pop("command")
+        if len(pressed_state) == 0:
+            pressed_state = default_state.copy()
+        ds_command = self.get_double_state_command(default_f, pressed_f)
+        super().__init__(command=ds_command, **default_state)
+        # get all default config params
+        default_state = dict(self)
+        default_state.pop("command")
         self.parity = True
-        self.state_configs = state_configs
-        # -1 because last command return button in default state.
-        self.set_config(commands[-1])
+        # when you click on the button, a state transition occurs.
+        self.state_configs = {
+            default_f:pressed_state,
+            pressed_f:default_state
+        }
 
     def set_config(self, f):
-        if self.state_configs is not None:
-            self.configure(**self.state_configs[f])
+        self.configure(**self.state_configs[f])
 
-    def get_modified_command(self, commands: Sequence[Callable])-> Callable:
-        f1, f2 = commands
-        def mod_command():
-            main_f = f1 if self.parity else f2
+    def get_double_state_command(
+            self, default_f: Callable, pressed_f: Callable)-> Callable:
+        def ds_command():
+            main_f = default_f if self.parity else pressed_f
             self.set_config(main_f)
             self.parity = not self.parity
             main_f()
-        return mod_command
+        return ds_command
 
-
-    
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -210,18 +222,17 @@ if __name__ == "__main__":
 
     cycle = Cycle(canvas)
     state_btn = DoubleStateButton(
-        [cycle.start, cycle.quit],
-        {
-            cycle.start:{
-                "text":"Stop Cycle"
-                
-            }, 
-            cycle.quit:{
-                "text":"Start Cycle"
-            }
+        default_state={
+            "command":cycle.start,
+            "text":"Start Cycle",
         },
-        master=root
-        )
+        pressed_state={
+            "command":cycle.quit,
+            "text":"Stop Cycle",
+            "bg":"red",
+            "fg":"white"
+        }
+    )
     state_btn.pack(side="left")
 
     # Delay setup
